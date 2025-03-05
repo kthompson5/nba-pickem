@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>NBA Inside Stuff Pick'em - March 5-6, 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Anton&display=swap');
+
+        body {
+            font-family: 'Anton', sans-serif;
+            background: linear-gradient(to bottom, #102A54, #3FB0B9);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h2 {
+            font-family: 'Press Start 2P', cursive;
+            color: #FFDD44;
+            text-shadow: 3px 3px 0 black;
+        }
+
+        table {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            color: black;
+            font-size: 14px;
+            margin: 0 auto;
+            overflow-x: auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid black;
+            text-align: center;
+        }
+
+        th {
+            background: #FF4500;
+            color: white;
+        }
+
+        button {
+            background: #FF0000;
+            color: yellow;
+            font-weight: bold;
+            border: 2px solid black;
+            cursor: pointer;
+            padding: 10px 20px;
+            margin: 5px;
+        }
+
+        select {
+            width: 100%;
+        }
+
+        canvas {
+            max-width: 600px;
+            background: white;
+            margin: 20px auto;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2>NBA INSIDE STUFF PICK'EM - MARCH 5-6, 2025</h2>
+
+<label for="nameSelect">Choose Your Player Name:</label>
+<select id="nameSelect">
+    <option value="">Select Player</option>
+</select>
+<button onclick="setCurrentPlayer()">Set Player</button>
+
+<h3 id="currentPlayerDisplay">Current Player: None</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Game</th>
+            <th>Your Pick</th>
+            <th>Actual Winner</th>
+        </tr>
+    </thead>
+    <tbody id="gamesTable"></tbody>
+</table>
+
+<button onclick="submitPicks()">Submit Picks</button>
+<button onclick="updateScores()">Update Scores & Graph</button>
+
+<h3>Standings Chart</h3>
+<canvas id="winsChart"></canvas>
+
+<script>
+// Config - Games & Players
+const games = [
+    "Celtics vs Knicks", "Lakers vs Mavericks", "Thunder vs Suns", "Bucks vs Heat",
+    "Nuggets vs Warriors", "Grizzlies vs Clippers", "Pacers vs Bulls", "Kings vs Rockets",
+    "Jazz vs Magic", "Hawks vs Raptors", "Spurs vs Wizards", "Pistons vs Trail Blazers",
+    "Hornets vs 76ers", "Cavs vs Pelicans", "Nets vs Timberwolves", "Celtics vs Bucks (rematch)"
+];
+
+const players = Array.from({length: 15}, (_, i) => `Player ${i+1}`);
+const picks = {}, wins = {};
+players.forEach(p => { picks[p] = Array(games.length).fill(""); wins[p] = 0; });
+
+// Current player making picks
+let currentPlayer = "";
+
+// Populate Name Dropdown
+function populatePlayerNames() {
+    const select = document.getElementById('nameSelect');
+    players.forEach(player => {
+        const option = document.createElement('option');
+        option.value = player;
+        option.textContent = player;
+        select.appendChild(option);
+    });
+}
+populatePlayerNames();
+
+// Set Current Player
+function setCurrentPlayer() {
+    currentPlayer = document.getElementById('nameSelect').value;
+    document.getElementById('currentPlayerDisplay').innerText = `Current Player: ${currentPlayer || 'None'}`;
+}
+
+// Load Games into Table
+function loadGames() {
+    const table = document.getElementById('gamesTable');
+    games.forEach((game, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${game}</td>
+            <td><select data-game="${index}">
+                <option value="">Select</option>
+                ${game.split(' vs ').map(t => `<option>${t}</option>`).join('')}
+            </select></td>
+            <td><select data-winner="${index}">
+                <option value="">TBD</option>
+                ${game.split(' vs ').map(t => `<option>${t}</option>`).join('')}
+            </select></td>
+        `;
+        table.appendChild(row);
+    });
+}
+window.onload = loadGames;
+
+// Submit Picks for Current Player
+function submitPicks() {
+    if (!currentPlayer) return alert("Select and set your player first!");
+    document.querySelectorAll('[data-game]').forEach(select => {
+        picks[currentPlayer][select.dataset.game] = select.value;
+    });
+    alert(`${currentPlayer}'s Picks Saved!`);
+}
+
+// Update Scores and Chart
+function updateScores() {
+    players.forEach(p => wins[p] = 0);
+
+    games.forEach((_, i) => {
+        const winner = document.querySelector(`[data-winner="${i}"]`).value;
+        players.forEach(p => {
+            if (picks[p][i] === winner && winner) {
+                wins[p]++;
+            }
+        });
+    });
+
+    updateGraph();
+}
+
+// Chart.js Bar Chart
+let chart = null;
+function updateGraph() {
+    const ctx = document.getElementById('winsChart').getContext('2d');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: players,
+            datasets: [{
+                data: players.map(p => wins[p]),
+                backgroundColor: players.map((_, i) => `hsl(${i * 24}, 100%, 50%)`),
+                borderColor: 'black',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
+
